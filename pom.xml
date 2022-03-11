@@ -1,0 +1,135 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.radon</groupId>
+    <artifactId>listener</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <drools.version>7.64.0.Final</drools.version>
+        <junit.version>5.7.2</junit.version>
+        <log4j.version>2.17.1</log4j.version>
+        <paho.version>1.2.5</paho.version>
+        <sqlite.version>3.7.2</sqlite.version>
+        <json.version>20211205</json.version>
+        
+        <dbPath>test.db</dbPath>
+        <name>${project.artifactId}</name>
+        <logLevel>DEBUG</logLevel>
+        <mqttHost>172.17.0.3</mqttHost>
+        <mqttPort>1883</mqttPort>
+        <!-- <scriptPath>/home/radon/src/radon-listener/scripts</scriptPath> -->
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.22.2</version>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId> 
+                <artifactId>properties-maven-plugin</artifactId> 
+                <version>1.0.0</version> 
+                <executions> 
+                    <execution> 
+                        <phase>generate-resources</phase> 
+                        <goals> 
+                            <goal>write-project-properties</goal> 
+                        </goals> 
+                        <configuration> 
+                            <outputFile>${project.build.outputDirectory}/pom.properties</outputFile> 
+                        </configuration> 
+                    </execution> 
+                </executions> 
+            </plugin>
+            
+        </plugins>
+    </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.drools</groupId>
+                <artifactId>drools-bom</artifactId>
+                <type>pom</type>
+                <version>${drools.version}</version>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>${paho.version}</version>
+        </dependency>
+    
+        <dependency>
+             <groupId>org.apache.logging.log4j</groupId>
+             <artifactId>log4j-api</artifactId>
+             <version>${log4j.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>org.apache.logging.log4j</groupId>
+             <artifactId>log4j-core</artifactId>
+             <version>${log4j.version}</version>
+         </dependency>
+    
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>${sqlite.version}</version>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-api</artifactId>
+            <version>${drools.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-compiler</artifactId>
+            <scope>runtime</scope>
+            <version>${drools.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-mvel</artifactId>
+            <version>${drools.version}</version>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>${json.version}</version>
+        </dependency>
+    
+    </dependencies>
+
+</project>

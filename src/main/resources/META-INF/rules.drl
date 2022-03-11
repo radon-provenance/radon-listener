@@ -1,0 +1,139 @@
+package listener.rules
+
+import org.radon.listener.facts.CreateUser
+import org.radon.listener.facts.DeleteUser
+import org.radon.listener.facts.UpdateUser
+import org.radon.listener.facts.CreateGroup
+import org.radon.listener.facts.DeleteGroup
+import org.radon.listener.facts.UpdateGroup
+import org.radon.listener.facts.CreateResource
+import org.radon.listener.facts.DeleteResource
+import org.radon.listener.facts.UpdateResource
+import org.radon.listener.facts.CreateCollection
+import org.radon.listener.facts.DeleteCollection
+import org.radon.listener.facts.UpdateCollection
+
+import function org.radon.utils.DroolsUtility.helper
+import function org.radon.utils.DroolsUtility.help
+
+import org.radon.listener.workflows.SystemCommands
+
+
+rule "Create User"
+    when
+        CreateUser(name : name, uuid : uuid, groups : groups)
+    then
+        System.out.println("New user created: " + name + " - " + uuid);
+        System.out.println("Groups: " + groups);
+end
+
+
+rule "Create Group"
+    when
+        CreateGroup(name : name, uuid : uuid)
+    then
+        System.out.println("New group created: " + name + " - " + uuid);
+end
+
+
+rule "Create Resource"
+    when
+        CreateResource(container: container, name : name)
+    then
+        System.out.println("New Resource created: " + container + '/' + name);
+end
+
+
+rule "Ingest new JSON file"
+    when
+        CreateResource(container : container contains "CapellaModels", name : name str[endsWith] ".json")
+    then
+        System.out.println("json file ingested: " + container + '/' + name);
+        String cmd = "create_resource.py " + container + name;
+        SystemCommands.execScript(cmd);
+end
+
+
+rule "Create Collection"
+    when
+        CreateCollection(container: container, name : name)
+    then
+        System.out.println("New Collection created: " + container + '/' + name);
+end
+
+
+rule "Delete User"
+    when
+        DeleteUser(name : name, uuid : uuid, groups : groups)
+    then
+        System.out.println("User deleted: " + name + " - " + uuid);
+end
+
+
+rule "Delete Group"
+    when
+        DeleteGroup(name : name, uuid : uuid)
+    then
+        System.out.println("Group deleted: " + name + " - " + uuid);
+end
+
+
+rule "Delete Resource"
+    when
+        DeleteResource(container: container, name : name)
+    then
+        System.out.println("Resource deleted: " + container + '/' + name);
+end
+
+
+rule "Delete Collection"
+    when
+        DeleteCollection(container: container, name : name)
+    then
+        System.out.println("Collection deleted: " + container + '/' + name);
+end
+
+
+rule "Update User"
+    when
+        UpdateUser(userPre: userPre, userPost : userPost)
+    then
+        System.out.println("User modified: ");
+        System.out.println("Name: " + userPre.getName() + "->" + userPost.getName());
+        System.out.println("Email: " + userPre.getEmail() + "->" + userPost.getEmail());
+        System.out.println("UUID: " + userPre.getUuid() + "->" + userPost.getUuid());
+        System.out.println("Active: " + userPre.getActive() + "->" + userPost.getActive());
+end
+
+
+rule "Update Group"
+    when
+        UpdateGroup(groupPre: groupPre, groupPost : groupPost)
+    then
+        System.out.println("Group modified: ");
+        System.out.println("Name: " + groupPre.getName() + "->" + groupPost.getName());
+        System.out.println("UUID: " + groupPre.getUuid() + "->" + groupPost.getUuid());
+end
+
+    
+rule "Update Resource"
+    when
+       UpdateResource(rescPre: rescPre, rescPost : rescPost)
+    then
+        System.out.println("Resource modified: ");
+        System.out.println("Name: " + rescPre.getName() + "->" + rescPost.getName());
+        System.out.println("Modified TS: " + rescPre.getModifyTS() + "->" + rescPost.getModifyTS());
+end
+
+
+rule "Update Collection"
+    when
+       UpdateCollection(collPre: collPre, collPost : collPost)
+    then
+        System.out.println("Collection modified: ");
+        System.out.println("Name: " + collPre.getName() + "->" + collPost.getName());
+        System.out.println("Modified TS: " + collPre.getModifyTS() + "->" + collPost.getModifyTS());
+end
+
+
+
