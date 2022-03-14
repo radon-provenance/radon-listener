@@ -1,4 +1,4 @@
-#!/home/radon/ve/radon-lib/bin/python
+#!/usr/bin/env python
 
 import sys
 import json

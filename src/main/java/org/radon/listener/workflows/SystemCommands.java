@@ -27,6 +27,7 @@ public class SystemCommands {
 
 
     public static void execCommand(String command) throws IOException {
+        System.out.println(command);
         Process process = Runtime.getRuntime().exec(command);
 
         BufferedReader stdInput = new BufferedReader(new 
