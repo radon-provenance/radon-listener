@@ -25,3 +25,5 @@ docker build -t radon-listener-image --build-arg DSE_HOST --build-arg MQTT_HOST 
 docker run -it --rm radon-listener-image:latest mvn exec:java -Dexec.mainClass="org.radon.listener.RadonApp"
 
 If installed correctly it should display notifications when an action fires a rule in Radon.
+
+

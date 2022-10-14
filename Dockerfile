@@ -1,5 +1,5 @@
 # Dockerfile
-FROM python:3.6
+FROM python:3.10
 
 # Hostnames for dse and mqtt servers
 ARG DSE_HOST
@@ -22,7 +22,7 @@ RUN mkdir -p /code/radon-listener
 # Install radon-lib
 COPY radon-lib /code/radon-lib
 WORKDIR /code/radon-lib
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt -vvv
 RUN python setup.py develop
 
 # Create Listener

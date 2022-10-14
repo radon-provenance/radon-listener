@@ -20,7 +20,7 @@
         <dbPath>test.db</dbPath>
         <name>${project.artifactId}</name>
         <logLevel>DEBUG</logLevel>
-        <mqttHost>172.17.0.3</mqttHost>
+        <mqttHost>172.17.0.4</mqttHost>
         <mqttPort>1883</mqttPort>
         <!-- <scriptPath>/home/radon/src/radon-listener/scripts</scriptPath> -->
     </properties>
