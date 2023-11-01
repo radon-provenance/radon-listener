@@ -1,0 +1,134 @@
+package org.radon.listener;
+unit RadonUnit;
+
+
+import org.radon.listener.workflows.SystemCommands
+import org.radon.listener.workflows.Microservices
+
+
+
+/***************************** REQUEST CREATE ****************************************/
+
+
+rule "CreateRequest User"
+    when
+        /createRequestUser[user : user, meta : meta]
+    then
+    	System.out.println("Request user creation: " + user.getLogin());
+        Microservices.createUser(user, meta);
+end
+
+
+rule "CreateRequest Group"
+    when
+        /createRequestGroup[group : group, meta : meta]
+    then
+    	System.out.println("Request group creation: " + group.getName());
+        Microservices.createGroup(group, meta);
+end
+
+
+rule "CreateRequest Collection"
+    when
+        /createRequestCollection[coll : coll, meta : meta]
+    then
+    	System.out.println("Request coll creation: " + coll.getContainer() + "/" + coll.getName());
+        Microservices.createCollection(coll, meta);
+end
+
+
+rule "CreateRequest Resource"
+    when
+        /createRequestResource[resc : resc, meta : meta]
+    then
+    	System.out.println("Request resc creation: " + resc.getContainer() + "/" + resc.getName());
+        Microservices.createResource(resc, meta);
+end
+
+
+
+/***************************** REQUEST UPDATE ****************************************/
+
+
+rule "UpdateRequest User"
+    when
+        /updateRequestUser[user : user, meta : meta]
+    then
+    	System.out.println("Request user update: " + user.getLogin());
+        Microservices.updateUser(user, meta);
+end
+
+
+rule "UpdateRequest Group"
+    when
+        /updateRequestGroup[group : group, meta : meta]
+    then
+    	System.out.println("Request group update: " + group.getName());
+        Microservices.updateGroup(group, meta);
+end
+
+
+rule "UpdateRequest Collection"
+    when
+        /updateRequestCollection[coll : coll, meta : meta]
+    then
+    	System.out.println("Request coll update: " + coll.getContainer() + "/" + coll.getName());
+        Microservices.updateCollection(coll, meta);
+end
+
+
+rule "UpdateRequest Resource"
+    when
+        /updateRequestResource[resc : resc, meta : meta]
+    then
+    	System.out.println("Request resc update: " + resc.getContainer() + "/" + resc.getName());
+        Microservices.updateResource(resc, meta);
+end
+
+
+
+/***************************** REQUEST DELETE ****************************************/
+
+
+
+rule "DeleteRequest User"
+    when
+        /deleteRequestUser[user : user, meta : meta]
+    then
+    	System.out.println("Request user delete: " + user.getLogin());
+        Microservices.deleteUser(user, meta);
+end
+
+
+rule "DeleteRequest Group"
+    when
+        /deleteRequestGroup[group : group, meta : meta]
+    then
+    	System.out.println("Request group delete: " + group.getName());
+        Microservices.deleteGroup(group, meta);
+end
+
+
+rule "DeleteRequest Collection"
+    when
+        /deleteRequestCollection[coll : coll, meta : meta]
+    then
+    	System.out.println("Request collection delete: " + coll.getContainer() + "/" + coll.getName());
+        Microservices.deleteCollection(coll, meta);
+end
+
+
+rule "DeleteRequest Resource"
+    when
+        /deleteRequestResource[resc : resc, meta : meta]
+    then
+    	System.out.println("Request resource delete: " + resc.getContainer() + "/" + resc.getName());
+        Microservices.deleteResource(resc, meta);
+end
+
+
+
+
+
+
+

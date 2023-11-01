@@ -17,11 +17,11 @@
 package org.radon.listener;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import org.drools.ruleunits.api.RuleUnitInstance;
+import org.drools.ruleunits.api.RuleUnitProvider;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -32,177 +32,431 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 import org.json.JSONObject;
+//import org.json.JSONObject;
 import org.kie.api.KieServices;
-import org.kie.api.runtime.KieContainer;
-import org.kie.api.runtime.KieSession;
-import org.radon.listener.facts.CreateCollection;
-import org.radon.listener.facts.CreateGroup;
-import org.radon.listener.facts.CreateResource;
-import org.radon.listener.facts.CreateUser;
-import org.radon.listener.facts.DeleteCollection;
-import org.radon.listener.facts.DeleteGroup;
-import org.radon.listener.facts.DeleteResource;
-import org.radon.listener.facts.DeleteUser;
-import org.radon.listener.facts.UpdateCollection;
-import org.radon.listener.facts.UpdateGroup;
-import org.radon.listener.facts.UpdateResource;
-import org.radon.listener.facts.UpdateUser;
+import org.kie.api.builder.KieScanner;
+import org.radon.listener.facts.CreateRequestCollection;
+import org.radon.listener.facts.CreateRequestGroup;
+import org.radon.listener.facts.CreateRequestResource;
+import org.radon.listener.facts.CreateRequestUser;
+import org.radon.listener.facts.CreateSuccessCollection;
+import org.radon.listener.facts.CreateSuccessGroup;
+import org.radon.listener.facts.DeleteRequestCollection;
+import org.radon.listener.facts.DeleteRequestGroup;
+import org.radon.listener.facts.DeleteRequestResource;
+import org.radon.listener.facts.DeleteRequestUser;
+import org.radon.listener.facts.DeleteSuccessCollection;
+import org.radon.listener.facts.DeleteSuccessGroup;
+import org.radon.listener.facts.DeleteSuccessResource;
+import org.radon.listener.facts.CreateSuccessUser;
+import org.radon.listener.facts.DeleteFailCollection;
+import org.radon.listener.facts.DeleteFailGroup;
+import org.radon.listener.facts.DeleteFailResource;
+import org.radon.listener.facts.DeleteFailUser;
+import org.radon.listener.facts.CreateSuccessResource;
+import org.radon.listener.facts.CreateFailCollection;
+import org.radon.listener.facts.CreateFailGroup;
+import org.radon.listener.facts.CreateFailResource;
+import org.radon.listener.facts.CreateFailUser;
+import org.radon.listener.facts.DeleteSuccessUser;
+import org.radon.listener.facts.UpdateFailCollection;
+import org.radon.listener.facts.UpdateFailGroup;
+import org.radon.listener.facts.UpdateFailResource;
+import org.radon.listener.facts.UpdateFailUser;
+import org.radon.listener.facts.UpdateRequestCollection;
+import org.radon.listener.facts.UpdateRequestGroup;
+import org.radon.listener.facts.UpdateRequestResource;
+import org.radon.listener.facts.UpdateRequestUser;
+import org.radon.listener.facts.UpdateSuccessCollection;
+import org.radon.listener.facts.UpdateSuccessGroup;
+import org.radon.listener.facts.UpdateSuccessResource;
+import org.radon.listener.facts.UpdateSuccessUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RadonMqttClient implements MqttCallback{
 
-    private static Logger logger = LogManager.getLogger(RadonApp.class);
+    private static Logger logger = LoggerFactory.getLogger(RadonApp.class);
     
     private String serverURI;
     private String subscriberId;
-    private KieSession kSession;
     private String scriptPath;
     
+    private KieScanner kScanner;
+    
+    private RadonUnit radonUnit;
+    private RuleUnitInstance<RadonUnit> instance;
+    
 
     
-    public RadonMqttClient(String host, String port) {
+    public RadonMqttClient() {
         super();
-        this.serverURI = String.format("tcp://%s:%s", host, port);
+        RadonParameters params = RadonParameters.getInstance();
+        this.serverURI = String.format("tcp://%s:%s", 
+        							   params.getMqttHost(), 
+        							   params.getMqttPort());
         this.subscriberId = UUID.randomUUID().toString();
+
+        logger.info("Creating RuleUnit");
+        radonUnit = new RadonUnit();
+
+        instance = RuleUnitProvider.get().createRuleUnitInstance(radonUnit);
         
-        logger.info( "Bootstrapping the Rule Engine" );
-//        KieServices ks = KieServices.Factory.get();
-//        KieContainer kContainer = ks.getKieClasspathContainer();
-//        this.kSession = kContainer.newKieSession();
+       /* ks = KieServices.Factory.get();
+        
+
+        ReleaseId releaseId = ks.newReleaseId("org.radon", "listener", "1.0-SNAPSHOT");
+        kContainer = ks.newKieContainer(releaseId);
+        
+        //this.kContainer = this.ks.getKieClasspathContainer();
+        
+        kScanner = ks.newKieScanner(kContainer);
+        kScanner.start( 10000L );
+        */
+
+
+        /*KieScanner kScanner = this.ks.newKieScanner( kContainer );
+        kScanner.start( 10000L );*/
+        
     }
 
+
+    
+    public void message_create_request(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+    	JSONObject objJSON = payload.getJSONObject("obj");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getCreateRequestUser().add(
+            		new CreateRequestUser(objJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getCreateRequestGroup().add(
+            		new CreateRequestGroup(objJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getCreateRequestCollection().add(
+            		new CreateRequestCollection(objJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getCreateRequestResource().add(
+            		new CreateRequestResource(objJSON, metaJSON));
+            break;
+		}
+    }
+    
+    public void message_create_success(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+    	JSONObject objJSON = payload.getJSONObject("obj");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getCreateSuccessUser().add(
+            		new CreateSuccessUser(objJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getCreateSuccessGroup().add(
+            		new CreateSuccessGroup(objJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getCreateSuccessCollection().add(
+            		new CreateSuccessCollection(objJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getCreateSuccessResource().add(
+            		new CreateSuccessResource(objJSON, metaJSON));
+            break;
+		}    	
+    }
+    
+    public void message_create_fail(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+
+    	JSONObject objJSON = payload.getJSONObject("obj");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getCreateFailUser().add(
+            		new CreateFailUser(objJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getCreateFailGroup().add(
+            		new CreateFailGroup(objJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getCreateFailCollection().add(
+            		new CreateFailCollection(objJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getCreateFailResource().add(
+            		new CreateFailResource(objJSON, metaJSON));
+            break;
+		}
+    }
+
+    public void message_create(String op_type, String obj_type, String obj_key, 
+    		JSONObject payload) {    	
+    	switch(op_type) {
+    	case "request":
+    		message_create_request(obj_type, obj_key, payload);
+    		break;
+    	case "success":
+    		message_create_success(obj_type, obj_key, payload);
+    		break;
+    	case "fail":
+    		message_create_fail(obj_type, obj_key, payload);
+    		break;
+    	}
+    }
+    
+    public void message_delete_request(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+    	JSONObject objJSON = payload.getJSONObject("obj");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getDeleteRequestUser().add(
+            		new DeleteRequestUser(objJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getDeleteRequestGroup().add(
+            		new DeleteRequestGroup(objJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getDeleteRequestCollection().add(
+            		new DeleteRequestCollection(objJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getDeleteRequestResource().add(
+            		new DeleteRequestResource(objJSON, metaJSON));
+            break;
+		}
+    }
+    
+    public void message_delete_success(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+    	JSONObject objJSON = payload.getJSONObject("obj");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getDeleteSuccessUser().add(
+            		new DeleteSuccessUser(objJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getDeleteSuccessGroup().add(
+            		new DeleteSuccessGroup(objJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getDeleteSuccessCollection().add(
+            		new DeleteSuccessCollection(objJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getDeleteSuccessResource().add(
+            		new DeleteSuccessResource(objJSON, metaJSON));
+            break;
+		}    	
+    }
+    
+    public void message_delete_fail(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+
+    	JSONObject objJSON = payload.getJSONObject("obj");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getDeleteFailUser().add(
+            		new DeleteFailUser(objJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getDeleteFailGroup().add(
+            		new DeleteFailGroup(objJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getDeleteFailCollection().add(
+            		new DeleteFailCollection(objJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getDeleteFailResource().add(
+            		new DeleteFailResource(objJSON, metaJSON));
+            break;
+		}
+    }
+
+    public void message_delete(String op_type, String obj_type, String obj_key, 
+    		JSONObject payload) {    	
+    	switch(op_type) {
+    	case "request":
+    		message_delete_request(obj_type, obj_key, payload);
+    		break;
+    	case "success":
+    		message_delete_success(obj_type, obj_key, payload);
+    		break;
+    	case "fail":
+    		message_delete_fail(obj_type, obj_key, payload);
+    		break;
+    	}
+    }
+    
+    public void message_update_request(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+    	JSONObject objJSON = payload.getJSONObject("obj");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getUpdateRequestUser().add(
+            		new UpdateRequestUser(objJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getUpdateRequestGroup().add(
+            		new UpdateRequestGroup(objJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getUpdateRequestCollection().add(
+            		new UpdateRequestCollection(objJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getUpdateRequestResource().add(
+            		new UpdateRequestResource(objJSON, metaJSON));
+            break;
+		}
+    }
+    
+    public void message_update_success(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+    	JSONObject objBeforeJSON = payload.getJSONObject("pre");
+    	JSONObject objAfterJSON = payload.getJSONObject("post");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getUpdateSuccessUser().add(
+            		new UpdateSuccessUser(objBeforeJSON, objAfterJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getUpdateSuccessGroup().add(
+            		new UpdateSuccessGroup(objBeforeJSON, objAfterJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getUpdateSuccessCollection().add(
+            		new UpdateSuccessCollection(objBeforeJSON, objAfterJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getUpdateSuccessResource().add(
+            		new UpdateSuccessResource(objBeforeJSON, objAfterJSON, metaJSON));
+            break;
+		}    	
+    }
+    
+    public void message_update_fail(String obj_type, String obj_key, 
+    		JSONObject payload) { 
+    	JSONObject objBeforeJSON = payload.getJSONObject("before");
+    	JSONObject objAfterJSON = payload.getJSONObject("after");
+        JSONObject metaJSON = payload.getJSONObject("meta");
+        
+		switch (obj_type) {
+		case "user":
+            radonUnit.getUpdateFailUser().add(
+            		new UpdateFailUser(objBeforeJSON, objAfterJSON, metaJSON));
+            break;
+		case "group": 
+            radonUnit.getUpdateFailGroup().add(
+            		new UpdateFailGroup(objBeforeJSON, objAfterJSON, metaJSON));
+            break;
+		case "collection": 
+            radonUnit.getUpdateFailCollection().add(
+            		new UpdateFailCollection(objBeforeJSON, objAfterJSON, metaJSON));
+            break;
+		case "resource":
+            radonUnit.getUpdateFailResource().add(
+            		new UpdateFailResource(objBeforeJSON, objAfterJSON, metaJSON));
+            break;
+		}
+    }
+
+    public void message_update(String op_type, String obj_type, String obj_key, 
+    		JSONObject payload) {    	
+    	switch(op_type) {
+    	case "request":
+    		message_update_request(obj_type, obj_key, payload);
+    		break;
+    	case "success":
+    		message_update_success(obj_type, obj_key, payload);
+    		break;
+    	case "fail":
+    		message_update_fail(obj_type, obj_key, payload);
+    		break;
+    	}
+    }
+
+    @Override
+    public void messageArrived(String topic, MqttMessage message) throws Exception{
+        byte[] payload = message.getPayload();
+        logger.info("Received message on topic " + topic);
+        
+        String[] parts = topic.split("/");
+        String op_name = parts[0];
+        String op_type = parts[1];
+        String obj_type = parts[2];
+        String obj_key = String.join("/", Arrays.copyOfRange(parts, 3, parts.length));
+        
+        JSONObject payloadJSON = new JSONObject(message.toString());
+        
+        switch (op_name) {
+        case "create":
+        	message_create(op_type, obj_type, obj_key, payloadJSON);
+        	break;
+        case "delete":
+        	message_delete(op_type, obj_type, obj_key, payloadJSON);
+        	break;
+        case "update":
+        	message_update(op_type, obj_type, obj_key, payloadJSON);
+        	break;
+        	
+        }
+
+        int fired = instance.fire();
+        logger.info( "Number of Rules executed = " + fired);
+
+    }
     
     @Override
     public void connectionLost(Throwable cause) {
         logger.info("Connection to MQTT broker lost!");
     }
 
-   
-	@Override
-    public void messageArrived(String topic, MqttMessage message) throws Exception{
-        byte[] payload = message.getPayload();
-        logger.info("Received message on topic " + topic);
-        KieServices ks = KieServices.Factory.get();
-        KieContainer kContainer = ks.getKieClasspathContainer();
-        this.kSession = kContainer.newKieSession();
-        
-        String[] parts = topic.split("/");
-        String op = parts[0];
-        String obj = parts[1];
-        String uuid = String.join("/", Arrays.copyOfRange(parts, 2, parts.length));
-        
-        JSONObject payloadJSON = new JSONObject(message.toString());
-        switch (op) {
-        case "create":
-            switch (obj) {
-            case "user":
-                JSONObject postUserJSON = payloadJSON.getJSONObject("post");
-                CreateUser factUser = new CreateUser(postUserJSON);
-                kSession.insert(factUser);
-                break;
-            case "group":
-                JSONObject postGroupJSON = payloadJSON.getJSONObject("post");
-                CreateGroup factGroup = new CreateGroup(postGroupJSON);
-                kSession.insert(factGroup);
-                break;
-            case "resource":
-                JSONObject postRescJSON = payloadJSON.getJSONObject("post");
-                CreateResource factResc = new CreateResource(postRescJSON);
-                kSession.insert(factResc);
-                break;
-            case "collection":
-                JSONObject postCollJSON = payloadJSON.getJSONObject("post");
-                CreateCollection collResc = new CreateCollection(postCollJSON);
-                kSession.insert(collResc);
-                break;
-            }
-            break;
-        case "update":
-            switch (obj) {
-            case "user":
-                JSONObject preUserJSON = payloadJSON.getJSONObject("pre");
-                JSONObject postUserJSON = payloadJSON.getJSONObject("post");
-                UpdateUser factUser = new UpdateUser(preUserJSON, postUserJSON);
-                kSession.insert(factUser);
-                break;
-            case "group":
-                JSONObject preGroupJSON = payloadJSON.getJSONObject("pre");
-                JSONObject postGroupJSON = payloadJSON.getJSONObject("post");
-                UpdateGroup factGroup = new UpdateGroup(preGroupJSON, postGroupJSON);
-                kSession.insert(factGroup);
-                break;
-            case "resource":
-                JSONObject preRescJSON = payloadJSON.getJSONObject("pre");
-                JSONObject postRescJSON = payloadJSON.getJSONObject("post");
-                UpdateResource factResc = new UpdateResource(preRescJSON, postRescJSON);
-                kSession.insert(factResc);
-                break;
-            case "collection":
-                JSONObject preCollJSON = payloadJSON.getJSONObject("pre");
-                JSONObject postCollJSON = payloadJSON.getJSONObject("post");
-                UpdateCollection factColl = new UpdateCollection(preCollJSON, postCollJSON);
-                kSession.insert(factColl);
-                break;
-            }
-            break;
-        case "delete":
-            switch (obj) {
-            case "user":
-                JSONObject preUserJSON = payloadJSON.getJSONObject("pre");
-                DeleteUser factUser = new DeleteUser(preUserJSON);
-                kSession.insert(factUser);
-                break;
-            case "group":
-                JSONObject preGroupJSON = payloadJSON.getJSONObject("pre");
-                DeleteGroup factGroup = new DeleteGroup(preGroupJSON);
-                kSession.insert(factGroup);
-                break;
-            case "resource":
-                JSONObject preRescJSON = payloadJSON.getJSONObject("pre");
-                DeleteResource factResc = new DeleteResource(preRescJSON);
-                kSession.insert(factResc);
-                break;
-            case "collection":
-                JSONObject preCollJSON = payloadJSON.getJSONObject("pre");
-                DeleteCollection factColl = new DeleteCollection(preCollJSON);
-                kSession.insert(factColl);
-                break;
-            }
-            break;
-        }
-//        
-        int fired = kSession.fireAllRules();
-//        
-//        
-        System.out.println( "Number of Rules executed = " + fired );
-//        System.out.println( "Item Category: " + item.getCategory()); 
-    }
-
 
     public void loop() {
         IMqttClient subscriber;
         MqttConnectOptions options = new MqttConnectOptions();
-        try {
-            subscriber = new MqttClient(this.serverURI, this.subscriberId, 
-                                        new MqttDefaultFilePersistence("/tmp"));
-            subscriber.setCallback(this);
-            options.setAutomaticReconnect(true);
-            options.setCleanSession(true);
-            options.setConnectionTimeout(10);
-            subscriber.connect(options);
-
-            subscriber.subscribe("#");
-        } catch (MqttSecurityException e1) {
-            e1.printStackTrace();
-            return;
-        } catch (MqttException e1) {
-            e1.printStackTrace();
-            return;
+       try {
+	        subscriber = new MqttClient(this.serverURI, this.subscriberId, 
+	                                    new MqttDefaultFilePersistence("/tmp"));
+	        subscriber.setCallback(this);
+	        options.setAutomaticReconnect(true);
+	        options.setCleanSession(true);
+	        options.setConnectionTimeout(10);
+	        subscriber.connect(options);
+	        subscriber.subscribe("#");
+	        logger.info("Connected to " + this.serverURI);
+	    } catch (MqttSecurityException e1) {
+	        logger.error(e1.getMessage());
+	        return;
+	    } catch (MqttException e1) {
+	        logger.error(e1.toString());
+	        return;
         }
-        logger.info("Connected to " + this.serverURI);
     }
 
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
         logger.info("deliveryComplete");
-    }
+    }  
 }

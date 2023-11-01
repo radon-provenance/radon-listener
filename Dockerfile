@@ -1,33 +1,12 @@
-# Dockerfile
-FROM python:3.10
+FROM maven:3.9-eclipse-temurin-17
 
-# Hostnames for dse and mqtt servers
-ARG DSE_HOST
-ARG MQTT_HOST
+WORKDIR /app
+COPY pom.xml ./
+COPY src ./src
 
-ENV PYTHONUNBUFFERED 1
-ENV DSE_HOST=${DSE_HOST}
-ENV MQTT_HOST=${MQTT_HOST}
-ENV CQLENG_ALLOW_SCHEMA_MANAGEMENT 1
-
-# Install prerequisites
-RUN apt-get -y update &&  \
-    apt-get install -y nano less libldap2-dev libsasl2-dev maven && \
-    pip install --upgrade pip
-
-# Create destination folders
-RUN mkdir -p /code/radon-lib
-RUN mkdir -p /code/radon-listener
-
-# Install radon-lib
-COPY radon-lib /code/radon-lib
-WORKDIR /code/radon-lib
-RUN pip install -r requirements.txt -vvv
-RUN python setup.py develop
-
-# Create Listener
-COPY radon-listener /code/radon-listener
-WORKDIR /code/radon-listener
+RUN mvn dependency:resolve
+RUN mvn dependency:copy-dependencies -DoutputDirectory=./lib
 RUN mvn install
-RUN mvn compile
+RUN mv target/*.jar .
 
+ENTRYPOINT ["java", "-jar","radon-listener-1.0.jar"]
